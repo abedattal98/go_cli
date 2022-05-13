@@ -54,13 +54,16 @@ func (client *TaskRepository) GetTasks(ctx context.Context) ([]*models.Task, err
 }
 
 func (client *TaskRepository) GetTask(ctx context.Context, id string) (*models.Task, error) {
+	// convert task id to mongo id
 	mongoID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
+	// filter tasks by id
 	filter := bson.M{"_id": mongoID}
 
 	t := &models.Task{}
+	// get task by id and decode it
 	err = client.db.FindOne(ctx, filter).Decode(t)
 	if err != nil {
 		return nil, err
@@ -70,6 +73,7 @@ func (client *TaskRepository) GetTask(ctx context.Context, id string) (*models.T
 }
 
 func (client *TaskRepository) CreateTask(ctx context.Context, taskName string) (*models.Task, error) {
+	// Create a new task from the task name
 	task := &models.Task{
 		ID:        primitive.NewObjectID(),
 		CreatedAt: time.Now(),
@@ -78,16 +82,20 @@ func (client *TaskRepository) CreateTask(ctx context.Context, taskName string) (
 		Completed: false,
 	}
 	_, err := client.db.InsertOne(ctx, task)
+	if err != nil {
+		return nil, err
+	}
 	return task, err
 }
 
 func (client *TaskRepository) CompleteTask(ctx context.Context, id string) error {
+	// convert task id to mongo id
 	mongoID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 	filter := bson.M{"_id": mongoID}
-
+	// update task by id 
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{
 		primitive.E{Key: "completed", Value: true},
 	}}}

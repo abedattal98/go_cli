@@ -19,25 +19,28 @@ var ctx = context.TODO()
 var db *mongo.Database
 
 func init() {
-	// 
+	// set up connection to mongodb options
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	// connect to mongodb
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
+	// check connection
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+	// set db to use "tasker" database
 	db = client.Database("tasker")
 }
 
 func main() {
+	// create a new task repository
 	repo := repositories.NewTaskRepo(db)
-
+	// check command line arguments
 	for _, arg := range os.Args[1:] {
 		switch arg {
-
 		case "add":
 			flag.Parse()
 			fmt.Printf("Hello from add %s\n", os.Args[2])
@@ -86,6 +89,7 @@ func main() {
 				fmt.Printf("Please provide a task number to mark as complete\n")
 				os.Exit(1)
 			}
+			// convert task minutes to int
 			minutes, err := strconv.Atoi(os.Args[2])
 			if err != nil {
 				log.Fatal(err)
@@ -126,8 +130,8 @@ func waitForTask(task *models.Task, minutes int) error {
 
 	// creates a new Timer that will send the current time on its channel after at least duration d.
 	timer1 := time.NewTimer(time.Duration(minutes) * time.Minute)
+	// checks if the timer has expired
 	<-timer1.C
-
 	fmt.Printf("Task %s is complete!\n", task.Text)
 	return nil
 }
