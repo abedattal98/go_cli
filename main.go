@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"exampleTodo/models"
+	"exampleTodo/repositories"
 	"flag"
 	"fmt"
 	"log"
@@ -13,10 +15,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var collection *mongo.Collection
 var ctx = context.TODO()
+var db *mongo.Database
 
 func init() {
+	// 
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
@@ -26,17 +29,19 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	collection = client.Database("tasker").Collection("tasks")
+	db = client.Database("tasker")
 }
 
 func main() {
+	repo := repositories.NewTaskRepo(db)
+
 	for _, arg := range os.Args[1:] {
 		switch arg {
-			
+
 		case "add":
 			flag.Parse()
 			fmt.Printf("Hello from add %s\n", os.Args[2])
-			task, err := createTask(os.Args[2])
+			task, err := repo.CreateTask(ctx, os.Args[2])
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
@@ -47,7 +52,7 @@ func main() {
 		case "list":
 			flag.Parse()
 			fmt.Printf("Hello from list")
-			tasks, err := getTasks()
+			tasks, err := repo.GetTasks(ctx)
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
@@ -62,7 +67,7 @@ func main() {
 			}
 			fmt.Printf("Hello we are doing %s\n", os.Args[2])
 
-			task, err := getTask(os.Args[2])
+			task, err := repo.GetTask(ctx, os.Args[2])
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
@@ -71,7 +76,7 @@ func main() {
 				fmt.Printf("Task %s is already complete\n", task.Text)
 				os.Exit(1)
 			}
-			completeTask(os.Args[2])
+			repo.CompleteTask(ctx, os.Args[2])
 			fmt.Printf("Task %s is complete\n", task.Text)
 			os.Exit(1)
 
@@ -86,7 +91,7 @@ func main() {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			task, err := getTask(os.Args[3])
+			task, err := repo.GetTask(ctx, os.Args[3])
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
@@ -96,7 +101,7 @@ func main() {
 				os.Exit(1)
 			}
 			waitForTask(task, minutes)
-			completeTask(os.Args[3])
+			repo.CompleteTask(ctx, os.Args[3])
 			fmt.Printf("Task %s is complete\n", task.Text)
 			os.Exit(1)
 
@@ -106,7 +111,7 @@ func main() {
 	}
 }
 
-func printTasks(tasks []*Task) {
+func printTasks(tasks []*models.Task) {
 	for i, v := range tasks {
 		if v.Completed {
 			fmt.Printf("Completed task %d: %s %s\n", i+1, v.ID.String(), v.Text)
@@ -116,7 +121,7 @@ func printTasks(tasks []*Task) {
 	}
 }
 
-func waitForTask(task *Task, minutes int) error {
+func waitForTask(task *models.Task, minutes int) error {
 	fmt.Printf("Waiting for task %s to complete...\n", task.Text)
 
 	// creates a new Timer that will send the current time on its channel after at least duration d.
