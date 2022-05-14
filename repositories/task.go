@@ -88,18 +88,18 @@ func (client *TaskRepository) CreateTask(ctx context.Context, taskName string) (
 	return task, err
 }
 
-func (client *TaskRepository) CompleteTask(ctx context.Context, id string) error {
+func (client *TaskRepository) CompleteTask(ctx context.Context, id string) (*models.Task, error) {
 	// convert task id to mongo id
 	mongoID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	filter := bson.M{"_id": mongoID}
-	// update task by id 
+	// update task by id
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{
 		primitive.E{Key: "completed", Value: true},
 	}}}
 
 	t := &models.Task{}
-	return client.db.FindOneAndUpdate(ctx, filter, update).Decode(t)
+	return t, client.db.FindOneAndUpdate(ctx, filter, update).Decode(t)
 }
