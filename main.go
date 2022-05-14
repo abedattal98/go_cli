@@ -82,14 +82,19 @@ func main() {
 				return
 			}
 			fmt.Printf("Hello we are doing %s\n", os.Args[2])
+			task, err := taskService.GetTask(ctx, os.Args[2])
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
 
-			task, err := taskService.CompleteTask(ctx, os.Args[2])
+			completetask, err := taskService.CompleteTask(ctx, *task)
 
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			fmt.Printf("Task %s is complete\n", task.Text)
+			fmt.Printf("Task %s is complete\n", completetask.Text)
 			os.Exit(1)
 
 		case "wait":
@@ -109,14 +114,18 @@ func main() {
 				fmt.Printf("Please provide a task number to mark as complete\n")
 				os.Exit(1)
 			}
-
-			task, err := taskService.WaitForTask(ctx, os.Args[3], minutes)
+			task, err := taskService.GetTask(ctx, os.Args[3])
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+			waitTask, err := taskService.WaitForTask(ctx, *task, minutes)
 
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			fmt.Printf("Task %s is complete\n", task.Text)
+			fmt.Printf("Task %s is complete\n", waitTask.Text)
 			os.Exit(1)
 
 		default:

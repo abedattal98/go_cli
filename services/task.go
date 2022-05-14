@@ -5,7 +5,6 @@ import (
 	"exampleTodo/interfaces"
 	"exampleTodo/models"
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
@@ -24,26 +23,20 @@ func (s *TaskService) GetTasks(ctx context.Context) ([]*models.Task, error) {
 func (s *TaskService) CreateTask(ctx context.Context, taskName string) (*models.Task, error) {
 	return s.taskRepo.CreateTask(ctx, taskName)
 }
-func (s *TaskService) CompleteTask(ctx context.Context, id string) (*models.Task, error) {
-	task, err := s.taskRepo.GetTask(ctx, os.Args[2])
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+
+func (s *TaskService) GetTask(ctx context.Context, id string) (*models.Task, error) {
+	return s.taskRepo.GetTask(ctx, id)
+}
+
+func (s *TaskService) CompleteTask(ctx context.Context, task models.Task) (*models.Task, error) {
 	if task.Completed {
 		fmt.Printf("Task %s is already complete\n", task.Text)
 		os.Exit(1)
 	}
-	return s.taskRepo.CompleteTask(ctx, id)
+	return s.taskRepo.CompleteTask(ctx, task)
 }
 
-func (s *TaskService) WaitForTask(ctx context.Context, id string, minutes int) (*models.Task, error) {
-	// check if the task exists
-	task, err := s.taskRepo.GetTask(ctx, os.Args[2])
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+func (s *TaskService) WaitForTask(ctx context.Context, task models.Task, minutes int) (*models.Task, error) {
 	// check if the task is complete
 	if task.Completed {
 		fmt.Printf("Task %s is already complete\n", task.Text)
@@ -51,10 +44,10 @@ func (s *TaskService) WaitForTask(ctx context.Context, id string, minutes int) (
 	}
 	waitForTask(task, minutes)
 
-	return s.taskRepo.CompleteTask(ctx, id)
+	return s.taskRepo.CompleteTask(ctx,task)
 }
 
-func waitForTask(task *models.Task, minutes int) error {
+func waitForTask(task models.Task, minutes int) error {
 	fmt.Printf("Waiting for task %s to complete...\n", task.Text)
 	// creates a new Timer that will send the current time on its channel after at least duration d.
 	timer1 := time.NewTimer(time.Duration(minutes) * time.Minute)
